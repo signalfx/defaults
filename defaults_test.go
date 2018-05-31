@@ -29,23 +29,25 @@ type (
 )
 
 type Sample struct {
-	Int       int           `default:"1"`
-	Int8      int8          `default:"8"`
-	Int16     int16         `default:"16"`
-	Int32     int32         `default:"32"`
-	Int64     int64         `default:"64"`
-	Uint      uint          `default:"1"`
-	Uint8     uint8         `default:"8"`
-	Uint16    uint16        `default:"16"`
-	Uint32    uint32        `default:"32"`
-	Uint64    uint64        `default:"64"`
-	Uintptr   uintptr       `default:"1"`
-	Float32   float32       `default:"1.32"`
-	Float64   float64       `default:"1.64"`
-	BoolTrue  bool          `default:"true"`
-	BoolFalse bool          `default:"false"`
-	String    string        `default:"hello"`
-	Duration  time.Duration `default:"10s"`
+	Int          int           `default:"1"`
+	Int8         int8          `default:"8"`
+	Int16        int16         `default:"16"`
+	Int32        int32         `default:"32"`
+	Int64        int64         `default:"64"`
+	Uint         uint          `default:"1"`
+	Uint8        uint8         `default:"8"`
+	Uint16       uint16        `default:"16"`
+	Uint32       uint32        `default:"32"`
+	Uint64       uint64        `default:"64"`
+	Uintptr      uintptr       `default:"1"`
+	Float32      float32       `default:"1.32"`
+	Float64      float64       `default:"1.64"`
+	BoolTrue     bool          `default:"true"`
+	BoolFalse    bool          `default:"false"`
+	BoolPtrFalse *bool         `default:"false"`
+	BoolPtrTrue  *bool         `default:"true"`
+	String       string        `default:"hello"`
+	Duration     time.Duration `default:"10s"`
 
 	Struct    Struct         `default:"{}"`
 	StructPtr *Struct        `default:"{}"`
@@ -86,10 +88,12 @@ type Sample struct {
 	StructPtrWithNoTag *Struct
 	StructWithNoTag    Struct
 
-	NonInitialString    string  `default:"foo"`
-	NonInitialSlice     []int   `default:"[123]"`
-	NonInitialStruct    Struct  `default:"{}"`
-	NonInitialStructPtr *Struct `default:"{}"`
+	NonInitialBoolPtrDefaultTrue  *bool   `default:"true"`
+	NonInitialBoolPtrDefaultFalse *bool   `default:"false"`
+	NonInitialString              string  `default:"foo"`
+	NonInitialSlice               []int   `default:"[123]"`
+	NonInitialStruct              Struct  `default:"{}"`
+	NonInitialStructPtr           *Struct `default:"{}"`
 }
 
 type Struct struct {
@@ -109,11 +113,16 @@ type Emmbeded struct {
 }
 
 func TestInit(t *testing.T) {
+	f := false
+	tr := true
+
 	sample := &Sample{
-		NonInitialString:    "string",
-		NonInitialSlice:     []int{1, 2, 3},
-		NonInitialStruct:    Struct{Foo: 123},
-		NonInitialStructPtr: &Struct{Foo: 123},
+		NonInitialBoolPtrDefaultTrue:  &f,
+		NonInitialBoolPtrDefaultFalse: &tr,
+		NonInitialString:              "string",
+		NonInitialSlice:               []int{1, 2, 3},
+		NonInitialStruct:              Struct{Foo: 123},
+		NonInitialStructPtr:           &Struct{Foo: 123},
 	}
 
 	if err := Set(sample); err != nil {
@@ -176,6 +185,12 @@ func TestInit(t *testing.T) {
 		}
 		if sample.BoolFalse != false {
 			t.Errorf("it should initialize bool (false)")
+		}
+		if *sample.BoolPtrTrue != true {
+			t.Errorf("it should initialize bool ptr (true)")
+		}
+		if *sample.BoolPtrFalse != false {
+			t.Errorf("it should initialize bool ptr (false)")
 		}
 		if sample.String != "hello" {
 			t.Errorf("it should initialize string")
@@ -319,6 +334,12 @@ func TestInit(t *testing.T) {
 	})
 
 	t.Run("non-initial value", func(t *testing.T) {
+		if *sample.NonInitialBoolPtrDefaultTrue != false {
+			t.Errorf("it should not override non-initial bool value")
+		}
+		if *sample.NonInitialBoolPtrDefaultFalse != true {
+			t.Errorf("it should not override non-initial bool value")
+		}
 		if sample.NonInitialString != "string" {
 			t.Errorf("it should not override non-initial value")
 		}

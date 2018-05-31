@@ -141,13 +141,21 @@ func setField(field reflect.Value, defaultVal string) error {
 			}
 			field.Set(ref.Elem())
 		case reflect.Ptr:
-			field.Set(reflect.New(field.Type().Elem()))
+			if field.Type().Elem().Kind() == reflect.Bool {
+				if val, err := strconv.ParseBool(defaultVal); err == nil {
+					field.Set(reflect.ValueOf(&val).Convert(field.Type()))
+				}
+			} else {
+				field.Set(reflect.New(field.Type().Elem()))
+			}
 		}
 	}
 
 	switch field.Kind() {
 	case reflect.Ptr:
-		setField(field.Elem(), defaultVal)
+		if field.Elem().Kind() != reflect.Bool {
+			setField(field.Elem(), defaultVal)
+		}
 		callSetter(field.Interface())
 	case reflect.Struct:
 		ref := reflect.New(field.Type())
